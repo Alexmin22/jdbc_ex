@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>List of Consumers</title>
+</head>
+<body>
+
+<h1>List of Consumers</h1>
+<br>
+
+<table>
+    <thead>
+    <tr>
+        <th>name</th>
+        <th>age</th>
+        <th>actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="oneCons : ${cons}">
+        <td th:text="${oneCons.id}"></td>
+        <td th:text="${oneCons.name}"></td>
+        <td th:text="${oneCons.email}"></td>
+        <td><a th:href="@{/{id}/edit(id=${oneCons.getId()})}">Update</a>
+            <form th:method="DELETE" th:action="@{/{id}(id=${oneCons.getId()})}">
+                <input type="submit" value="Delete"/>
+            </form>
+    </tr>
+    </tbody>
+</table>
+<br>
+<h2><a href="/add">Add new Consumer</a></h2>
+</body>
+</html>
