@@ -25,7 +25,6 @@ import java.util.Properties;
 @Configuration
 @ComponentScan("org.example")
 @EnableWebMvc
-@PropertySource("classpath:hibernate.properties")
 @EnableTransactionManagement
 public class Comfigure implements WebMvcConfigurer {
     static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
@@ -98,8 +97,6 @@ public class Comfigure implements WebMvcConfigurer {
         try {
             // Register JDBC driver
             Class.forName(JDBC_DRIVER);
-
-            //STEP 3: Connecting to database, Open a connection
             connection = DriverManager.getConnection(DB_URL, USER, PASS);
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
