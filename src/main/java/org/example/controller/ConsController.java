@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import org.example.dao.ConsDao;
+import org.example.dao.ConsDaoImpl;
 import org.example.entity.Consumer;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,12 +12,9 @@ import javax.validation.Valid;
 import java.sql.SQLException;
 
 @Controller
+@RequestMapping("/")
 public class ConsController {
-    private final ConsDao consDao;
-
-    public ConsController(ConsDao consDao) {
-        this.consDao = consDao;
-    }
+    private final ConsDao consDao = ConsDaoImpl.getInstance();
 
     @RequestMapping("/hello")
     public String hello(Model model) throws SQLException {

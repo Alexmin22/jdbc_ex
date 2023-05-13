@@ -1,24 +1,11 @@
 package org.example.entity;
 
-import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-
-@Entity
-@Table(name = "Consumer")
 public class Consumer {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+
     private int id;
 
-    @NotBlank(message = "Consumer name cannot be blank")
-    @Column(name = "name")
     private String name;
 
-    @NotBlank(message = "Consumer email cannot be blank")
-    @Email(message = "Invalid email")
-    @Column(name = "email")
     private String email;
 
     public Consumer(int id, String name, String email) {
@@ -52,5 +39,14 @@ public class Consumer {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    @Override
+    public String toString() {
+        return "Consumer{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }
