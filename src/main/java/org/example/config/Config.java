@@ -50,4 +50,5 @@ public class Config implements WebMvcConfigurer {
         resolver.setTemplateEngine(templateEngine());
         registry.viewResolver(resolver);
     }
+
 }
