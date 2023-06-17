@@ -1,30 +1,32 @@
 package org.example.dao;
 
 import org.example.entity.Consumer;
+import org.example.entity.Role;
 import org.example.utils.ConnectionManager;
 import org.example.utils.CustomException;
 import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Repository
-public class ConsDaoImpl implements ConsDao {
+public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
 
-    private static final ConsDaoImpl INSTANCE = new ConsDaoImpl();
+    private static final ConsumerEntityDaoImpl INSTANCE = new ConsumerEntityDaoImpl();
 
-    private ConsDaoImpl() {}
+    private ConsumerEntityDaoImpl() {}
 
-    public static ConsDaoImpl getInstance() {
+    public static ConsumerEntityDaoImpl getInstance() {
         return INSTANCE;
     }
 
-    private static final  String SAVE = "INSERT INTO Consumer (email, name) VALUES (?, ?)";
-    private static final  String DELETE = "DELETE FROM Consumer WHERE id =?";
-    private static final  String UPDATE = "UPDATE Consumer SET email = ?, name = ? WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, email, name FROM Consumer";
+    private static final  String SAVE = "INSERT INTO Consumer (email, name, role) VALUES (?, ?, ?)";
+    private static final  String UPDATE = "UPDATE Consumer SET email = ?, name = ?, role = ? WHERE id =?";
+    private static final  String FIND_ALL = "SELECT id, email, name, role FROM Consumer";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
@@ -33,6 +35,7 @@ public class ConsDaoImpl implements ConsDao {
              PreparedStatement statement = connection.prepareStatement(SAVE, Statement.RETURN_GENERATED_KEYS)) {    //ключи возвращают все поля объекта
             statement.setString(1, consumer.getEmail());
             statement.setString(2, consumer.getName());
+            statement.setString(3, consumer.getRole().name());
             statement.executeUpdate();
             ResultSet generatedKeys = statement.getGeneratedKeys();
 
@@ -46,38 +49,32 @@ public class ConsDaoImpl implements ConsDao {
     }
 
     @Override
-    public boolean deleteById(int id) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
-             PreparedStatement statement = connection.prepareStatement(DELETE)) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-            return statement.executeUpdate() > 0;   //executeUpdate() вернет инт, мы переводим этот инт в тру фолс
-        }
-    }
-
-    @Override
     public Consumer update(Consumer consumer) throws SQLException {
         try (Connection connection = ConnectionManager.get();
              PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, consumer.getEmail());
             statement.setString(2, consumer.getName());
-            statement.setInt(3, consumer.getId());
+            statement.setString(3, consumer.getRole().name());
+            statement.setLong(4, consumer.getId());
             statement.executeUpdate();
 
-            return findConsumerById(consumer.getId());
+            return findById(consumer.getId());
         }
     }
 
     private Consumer addConsumer(ResultSet rs) throws SQLException {
-        return new Consumer(rs.getInt("id"), rs.getString("name"), rs.getString("email"));
+        return new Consumer(rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("email"),
+        Role.valueOf(rs.getString("role")));
     }
 
     @Override
-    public Consumer findConsumerById(int id) throws SQLException {
+    public Consumer findById(long id) throws SQLException {
         Consumer consumer = null;
         try (Connection connection = ConnectionManager.get();
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
-            preparedStatement.setInt(1, id);
+            preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
                     consumer = addConsumer(rs);
@@ -92,7 +89,7 @@ public class ConsDaoImpl implements ConsDao {
     }
 
     @Override
-    public List<Consumer> findAllConsumer() throws SQLException {
+    public List<Consumer> findAll() throws SQLException {
         List<Consumer> consumers = new ArrayList<>();
 
         try (Connection connection = ConnectionManager.get();
@@ -106,8 +103,7 @@ public class ConsDaoImpl implements ConsDao {
         return consumers;
     }
 
-    @Override
-    public List<Consumer> findAllConsumer(CustomFilter customFilter) throws SQLException {
+    public List<Consumer> findAllWithFilter(CustomFilter customFilter) throws SQLException {
         List<Object> parameters = new ArrayList<>();
         List<String> filterWhere = new ArrayList<>();
 
@@ -118,6 +114,10 @@ public class ConsDaoImpl implements ConsDao {
         if (customFilter.email()!= null) {
             parameters.add("%" + customFilter.email() + "%");
             filterWhere.add("email LIKE ?");
+        }
+        if (customFilter.role()!= null) {
+            parameters.add("%" + customFilter.role().name() + "%");
+            filterWhere.add("role LIKE ?");
         }
 
         String where = "";
@@ -148,4 +148,5 @@ public class ConsDaoImpl implements ConsDao {
             return consumers;
         }
     }
+
 }

@@ -1,23 +1,36 @@
 package org.example.entity;
 
+import java.util.Objects;
+import java.util.Set;
+
 public class Consumer {
 
-    private int id;
+    private long id;
 
     private String name;
 
     private String email;
 
-    public Consumer(int id, String name, String email) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-    }
+    Role role;
+
+    Company company;
+
+    AddressConsumerHome address;
+
+    Set<Subscribe> subscribes;
+
 
     public Consumer() {
     }
 
-    public int getId() {
+    public Consumer(long id, String name, String email, Role role) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+    }
+
+    public long getId() {
         return id;
     }
 
@@ -41,12 +54,60 @@ public class Consumer {
         this.email = email;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
+    }
+
+    public AddressConsumerHome getAddress() {
+        return address;
+    }
+
+    public void setAddress(AddressConsumerHome address) {
+        this.address = address;
+    }
+
+    public Set<Subscribe> getSubscriberConsSet() {
+        return subscribes;
+    }
+
+    public void setSubscriberConsSet(Set<Subscribe> subscriberConsSet) {
+        this.subscribes = subscriberConsSet;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Consumer consumer = (Consumer) o;
+        return id == consumer.id && Objects.equals(name, consumer.name) && Objects.equals(email, consumer.email) && role == consumer.role && Objects.equals(company, consumer.company);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, email, role, company);
+    }
+
     @Override
     public String toString() {
         return "Consumer{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
+                ", role=" + role +
+                ", company=" + company +
+                ", address=" + address +
                 '}';
     }
 }
