@@ -1,6 +1,7 @@
 package org.example.entity;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Company {
     long id;
@@ -49,5 +50,18 @@ public class Company {
     public Company(long id, String name) {
         this.id = id;
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Company company = (Company) o;
+        return id == company.id && Objects.equals(name, company.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name);
     }
 }

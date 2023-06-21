@@ -22,8 +22,8 @@ public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
-    public Subscribe save(Subscribe subscribe) {
-        try (Connection connection = ConnectionManager.get();
+    public Subscribe save(Subscribe subscribe, Connection connection) {
+        try (connection;
              PreparedStatement statement =
                      connection.prepareStatement(SAVE, Statement.RETURN_GENERATED_KEYS)) {    //ключи возвращают все поля объекта
             statement.setString(1, subscribe.getName());
@@ -40,14 +40,14 @@ public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
     }
 
     @Override
-    public Subscribe update(Subscribe subscribe) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
+    public Subscribe update(Subscribe subscribe, Connection connection) throws SQLException {
+        try (connection;
              PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, subscribe.getName());
             statement.setLong(2, subscribe.getId());
             statement.executeUpdate();
 
-            return findById(subscribe.getId());
+            return findById(subscribe.getId(), connection);
         }
     }
 
@@ -57,9 +57,9 @@ public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
     }
 
     @Override
-    public Subscribe findById(long id) throws SQLException {
+    public Subscribe findById(long id, Connection connection) throws SQLException {
         Subscribe subscribe = null;
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -76,10 +76,10 @@ public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
     }
 
     @Override
-    public List<Subscribe> findAll() throws SQLException {
+    public List<Subscribe> findAll(Connection connection) throws SQLException {
         List<Subscribe> sub = new ArrayList<>();
 
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {

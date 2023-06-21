@@ -1,5 +1,6 @@
 package org.example.entity;
 
+import java.util.Objects;
 import java.util.Set;
 
 public class Subscribe {
@@ -36,5 +37,26 @@ public class Subscribe {
 
     public void setSubscribers(Set<SubscriberCons> subscribers) {
         this.subscribers = subscribers;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Subscribe subscribe = (Subscribe) o;
+        return id == subscribe.id && Objects.equals(name, subscribe.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name);
+    }
+
+    @Override
+    public String toString() {
+        return "Subscribe{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

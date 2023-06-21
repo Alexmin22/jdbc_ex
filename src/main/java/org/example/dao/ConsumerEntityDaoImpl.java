@@ -1,5 +1,6 @@
 package org.example.dao;
 
+import org.example.entity.AddressConsumerHome;
 import org.example.entity.Consumer;
 import org.example.entity.Role;
 import org.example.utils.ConnectionManager;
@@ -8,9 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Repository
@@ -24,18 +23,22 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
         return INSTANCE;
     }
 
-    private static final  String SAVE = "INSERT INTO Consumer (email, name, role) VALUES (?, ?, ?)";
-    private static final  String UPDATE = "UPDATE Consumer SET email = ?, name = ?, role = ? WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, email, name, role FROM Consumer";
+    private static final  String SAVE = "INSERT INTO Consumer (email, name, roles_id, address_id, company_id)" +
+            " VALUES (?, ?, ?, ?, ?)";
+    private static final  String UPDATE = "UPDATE Consumer SET email = ?, name = ?, roles_id = ?," +
+            " address_id = ?, company_id = ? WHERE id =?";
+    private static final  String FIND_ALL = "SELECT id, email, name, roles_id, address_id, company_id FROM Consumer";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
-    public Consumer save(Consumer consumer) {
-        try (Connection connection = ConnectionManager.get();
+    public Consumer save(Consumer consumer, Connection connection) {
+        try (connection;
              PreparedStatement statement = connection.prepareStatement(SAVE, Statement.RETURN_GENERATED_KEYS)) {    //ключи возвращают все поля объекта
             statement.setString(1, consumer.getEmail());
             statement.setString(2, consumer.getName());
-            statement.setString(3, consumer.getRole().name());
+            statement.setInt(3, consumer.getRole().ordinal()+1);
+            statement.setLong(4, consumer.getAddress().getId());
+            statement.setLong(5, consumer.getCompany().getId());
             statement.executeUpdate();
             ResultSet generatedKeys = statement.getGeneratedKeys();
 
@@ -49,16 +52,18 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
     }
 
     @Override
-    public Consumer update(Consumer consumer) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
+    public Consumer update(Consumer consumer, Connection connection) throws SQLException {
+        try (connection;
              PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, consumer.getEmail());
             statement.setString(2, consumer.getName());
-            statement.setString(3, consumer.getRole().name());
-            statement.setLong(4, consumer.getId());
+            statement.setInt(3, consumer.getRole().ordinal()+1);
+            statement.setLong(4, consumer.getAddress().getId());
+            statement.setLong(5, consumer.getCompany().getId());
+            statement.setLong(6, consumer.getId());
             statement.executeUpdate();
 
-            return findById(consumer.getId());
+            return findById(consumer.getId(), connection);
         }
     }
 
@@ -66,13 +71,17 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
         return new Consumer(rs.getInt("id"),
                 rs.getString("name"),
                 rs.getString("email"),
-        Role.valueOf(rs.getString("role")));
+                rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
+                CompanyEntityDaoImpl.getInstance().findById(
+                rs.getLong("company_id"), ConnectionManager.get()),
+                AddressConsumerHomeEntityDaoImpl.getInstance()
+                .findById(rs.getLong("address_id"), ConnectionManager.get()));
     }
 
     @Override
-    public Consumer findById(long id) throws SQLException {
+    public Consumer findById(long id, Connection connection) throws SQLException {
         Consumer consumer = null;
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -89,10 +98,10 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
     }
 
     @Override
-    public List<Consumer> findAll() throws SQLException {
+    public List<Consumer> findAll(Connection connection) throws SQLException {
         List<Consumer> consumers = new ArrayList<>();
 
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
@@ -103,7 +112,7 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
         return consumers;
     }
 
-    public List<Consumer> findAllWithFilter(CustomFilter customFilter) throws SQLException {
+    public List<Consumer> findAllWithFilter(CustomFilter customFilter, Connection connection) throws SQLException {
         List<Object> parameters = new ArrayList<>();
         List<String> filterWhere = new ArrayList<>();
 
@@ -116,8 +125,8 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
             filterWhere.add("email LIKE ?");
         }
         if (customFilter.role()!= null) {
-            parameters.add("%" + customFilter.role().name() + "%");
-            filterWhere.add("role LIKE ?");
+            parameters.add(customFilter.role().ordinal()+1);
+            filterWhere.add("roles_id = ?");
         }
 
         String where = "";
@@ -133,7 +142,7 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
         }
 
         String sql = FIND_ALL + where;
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             for (int i = 0; i < parameters.size(); i++) {
                 preparedStatement.setObject(i + 1, parameters.get(i));

@@ -6,25 +6,23 @@ import org.example.utils.CustomException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
 public interface EntityDao<T> {
 
-    T save(T t) throws SQLException;
+    String DELETE_SQL = "DELETE FROM ? WHERE id =?";
+    T save(T t, Connection connection) throws SQLException;
 
-    T update(T t) throws SQLException;
-    List<T> findAll() throws SQLException;
+    T update(T t, Connection connection) throws SQLException;
+    List<T> findAll(Connection connection) throws SQLException;
 
-    T findById(long id) throws SQLException;
+    T findById(long id, Connection connection) throws SQLException;
 
 
-    default boolean deleteById(long id, String tableName) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
-             PreparedStatement statement = connection.prepareStatement(
-                     "DELETE FROM ? WHERE id =?"
-             )) {
+    default boolean deleteById(long id, String tableName, Connection connection) throws SQLException {
+        try (connection;
+             PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
             statement.setString(1, tableName);
             statement.setLong(2, id);
             statement.executeUpdate();

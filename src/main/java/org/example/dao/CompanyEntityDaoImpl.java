@@ -23,8 +23,8 @@ public class CompanyEntityDaoImpl implements EntityDao<Company> {
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
-    public Company save(Company company) {
-        try (Connection connection = ConnectionManager.get();
+    public Company save(Company company, Connection connection) {
+        try (connection;
              PreparedStatement statement =
                      connection.prepareStatement(SAVE, Statement.RETURN_GENERATED_KEYS)) {    //ключи возвращают все поля объекта
             statement.setString(1, company.getName());
@@ -41,14 +41,14 @@ public class CompanyEntityDaoImpl implements EntityDao<Company> {
     }
 
     @Override
-    public Company update(Company company) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
+    public Company update(Company company, Connection connection) throws SQLException {
+        try (connection;
              PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, company.getName());
             statement.setLong(2, company.getId());
             statement.executeUpdate();
 
-            return findById(company.getId());
+            return findById(company.getId(), connection);
         }
     }
 
@@ -58,9 +58,9 @@ public class CompanyEntityDaoImpl implements EntityDao<Company> {
     }
 
     @Override
-    public Company findById(long id) throws SQLException {
+    public Company findById(long id, Connection connection) throws SQLException {
         Company company = null;
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -77,10 +77,10 @@ public class CompanyEntityDaoImpl implements EntityDao<Company> {
     }
 
     @Override
-    public List<Company> findAll() throws SQLException {
+    public List<Company> findAll(Connection connection) throws SQLException {
         List<Company> companies = new ArrayList<>();
 
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {

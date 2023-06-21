@@ -1,7 +1,6 @@
 package org.example.dao;
 
 import org.example.entity.AddressConsumerHome;
-import org.example.utils.ConnectionManager;
 import org.example.utils.CustomException;
 
 import java.sql.*;
@@ -13,18 +12,18 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
     public static AddressConsumerHomeEntityDaoImpl getInstance() {
         return INSTANCE;
     }
-    private static final  String SAVE = "INSERT INTO addressconsumerhome (city, street) VALUES (?, ?)";
-    private static final  String UPDATE = "UPDATE addressconsumerhome SET city = ?, street = ? WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, city, street FROM addressconsumerhome";
+    private static final  String SAVE = "INSERT INTO address_consumer_home (city, street) VALUES (?, ?)";
+    private static final  String UPDATE = "UPDATE address_consumer_home SET city = ?, street = ? WHERE id =?";
+    private static final  String FIND_ALL = "SELECT id, city, street FROM address_consumer_home";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
 
 
     @Override
-    public List<AddressConsumerHome> findAll() throws SQLException {
+    public List<AddressConsumerHome> findAll(Connection connection) throws SQLException {
         List<AddressConsumerHome> addresses = new ArrayList<>();
 
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
@@ -42,8 +41,8 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
     }
 
     @Override
-    public AddressConsumerHome save(AddressConsumerHome addressConsumerHome) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
+    public AddressConsumerHome save(AddressConsumerHome addressConsumerHome, Connection connection) throws SQLException {
+        try (connection;
              PreparedStatement statement = connection.prepareStatement(SAVE, Statement.RETURN_GENERATED_KEYS)) {    //ключи возвращают все поля объекта
             statement.setString(1, addressConsumerHome.getCity());
             statement.setString(2, addressConsumerHome.getStreet());
@@ -60,9 +59,9 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
     }
 
     @Override
-    public AddressConsumerHome findById(long id) throws SQLException {
+    public AddressConsumerHome findById(long id, Connection connection) throws SQLException {
         AddressConsumerHome address = null;
-        try (Connection connection = ConnectionManager.get();
+        try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -79,15 +78,15 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
     }
 
     @Override
-    public AddressConsumerHome update(AddressConsumerHome addressConsumerHome) throws SQLException {
-        try (Connection connection = ConnectionManager.get();
+    public AddressConsumerHome update(AddressConsumerHome addressConsumerHome, Connection connection) throws SQLException {
+        try (connection;
              PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, addressConsumerHome.getCity());
             statement.setString(2, addressConsumerHome.getStreet());
             statement.setLong(3, addressConsumerHome.getId());
             statement.executeUpdate();
 
-            return findById(addressConsumerHome.getId());
+            return findById(addressConsumerHome.getId(), connection);
         }
     }
 }
