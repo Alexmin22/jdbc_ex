@@ -7,16 +7,16 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsumerHome> {
+public class AddressConsumerHomeEntityDaoImpl implements EntityDao<Long, AddressConsumerHome> {
     private static final AddressConsumerHomeEntityDaoImpl INSTANCE = new AddressConsumerHomeEntityDaoImpl();
     public static AddressConsumerHomeEntityDaoImpl getInstance() {
         return INSTANCE;
     }
     private static final  String SAVE = "INSERT INTO address_consumer_home (city, street) VALUES (?, ?)";
     private static final  String UPDATE = "UPDATE address_consumer_home SET city = ?, street = ? WHERE id =?";
+    private static final String DELETE = "DELETE FROM address_consumer_home WHERE id =?";
     private static final  String FIND_ALL = "SELECT id, city, street FROM address_consumer_home";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
-
 
 
     @Override
@@ -27,17 +27,13 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
-                AddressConsumerHome addressConsumerHome = addAddress(rs);
-                addresses.add(addressConsumerHome);
+                AddressConsumerHome address = new AddressConsumerHome(rs.getInt("id"),
+                        rs.getString("city"),
+                        rs.getString("street"));
+                addresses.add(address);
             }
         }
         return addresses;
-    }
-
-    private AddressConsumerHome addAddress(ResultSet rs) throws SQLException {
-        return new AddressConsumerHome(rs.getInt("id"),
-                rs.getString("city"),
-                rs.getString("street"));
     }
 
     @Override
@@ -59,14 +55,16 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
     }
 
     @Override
-    public AddressConsumerHome findById(long id, Connection connection) throws SQLException {
+    public AddressConsumerHome findById(Long id, Connection connection) throws SQLException {
         AddressConsumerHome address = null;
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
-                    address = addAddress(rs);
+                    address = new AddressConsumerHome(rs.getInt("id"),
+                            rs.getString("city"),
+                            rs.getString("street"));
                 } else {
                     throw new CustomException("Consumer with id=" + id + " not found");
                 }
@@ -87,6 +85,16 @@ public class AddressConsumerHomeEntityDaoImpl implements EntityDao<AddressConsum
             statement.executeUpdate();
 
             return findById(addressConsumerHome.getId(), connection);
+        }
+    }
+
+    @Override
+    public boolean deleteById(Long id, Connection connection) throws SQLException {
+        try (connection;
+             PreparedStatement statement = connection.prepareStatement(DELETE)) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
+            return statement.executeUpdate() > 0;   //executeUpdate() вернет инт, мы переводим этот инт в тру фолс
         }
     }
 }

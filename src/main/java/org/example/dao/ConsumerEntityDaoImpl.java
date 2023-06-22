@@ -1,33 +1,30 @@
 package org.example.dao;
 
-import org.example.entity.AddressConsumerHome;
 import org.example.entity.Consumer;
 import org.example.entity.Role;
-import org.example.utils.ConnectionManager;
 import org.example.utils.CustomException;
-import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Repository
-public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
+public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
 
     private static final ConsumerEntityDaoImpl INSTANCE = new ConsumerEntityDaoImpl();
 
-    private ConsumerEntityDaoImpl() {}
+    public ConsumerEntityDaoImpl() {}
 
     public static ConsumerEntityDaoImpl getInstance() {
         return INSTANCE;
     }
 
-    private static final  String SAVE = "INSERT INTO Consumer (email, name, roles_id, address_id, company_id)" +
+    private static final  String SAVE = "INSERT INTO consumer (email, name, roles_id, address_id, company_id)" +
             " VALUES (?, ?, ?, ?, ?)";
-    private static final  String UPDATE = "UPDATE Consumer SET email = ?, name = ?, roles_id = ?," +
+    private static final  String UPDATE = "UPDATE consumer SET email = ?, name = ?, roles_id = ?," +
             " address_id = ?, company_id = ? WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, email, name, roles_id, address_id, company_id FROM Consumer";
+    private static final String DELETE = "DELETE FROM consumer WHERE id =?";
+    private static final  String FIND_ALL = "SELECT id, email, name, roles_id, address_id, company_id FROM consumer";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
@@ -43,7 +40,7 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
             ResultSet generatedKeys = statement.getGeneratedKeys();
 
             if (generatedKeys.next()) {
-                consumer.setId(generatedKeys.getInt(1));
+                consumer.setId(generatedKeys.getLong(1));
             }
             return consumer;
         } catch (SQLException e) {
@@ -67,32 +64,30 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
         }
     }
 
-    private Consumer addConsumer(ResultSet rs) throws SQLException {
-        return new Consumer(rs.getInt("id"),
-                rs.getString("name"),
-                rs.getString("email"),
-                rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
-                CompanyEntityDaoImpl.getInstance().findById(
-                rs.getLong("company_id"), ConnectionManager.get()),
-                AddressConsumerHomeEntityDaoImpl.getInstance()
-                .findById(rs.getLong("address_id"), ConnectionManager.get()));
-    }
-
     @Override
-    public Consumer findById(long id, Connection connection) throws SQLException {
+    public Consumer findById(Long id, Connection connection) {
         Consumer consumer = null;
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
-                    consumer = addConsumer(rs);
+                    consumer = new Consumer(rs.getLong("id"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
+                            CompanyEntityDaoImpl.getInstance().findById(
+                                    rs.getLong("company_id"), connection),
+                            AddressConsumerHomeEntityDaoImpl.getInstance()
+                                    .findById(rs.getLong("address_id"), connection));
                 } else {
                     throw new CustomException("Consumer with id=" + id + " not found");
                 }
             } catch (CustomException e) {
                 throw new RuntimeException(e);
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
         return consumer;
     }
@@ -105,7 +100,14 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
-                Consumer consumer = addConsumer(rs);
+                Consumer consumer = new Consumer(rs.getLong("id"),
+                        rs.getString("name"),
+                        rs.getString("email"),
+                        rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
+                        CompanyEntityDaoImpl.getInstance().findById(
+                                rs.getLong("company_id"), connection),
+                        AddressConsumerHomeEntityDaoImpl.getInstance()
+                                .findById(rs.getLong("address_id"), connection));
                 consumers.add(consumer);
             }
         }
@@ -151,11 +153,27 @@ public class ConsumerEntityDaoImpl implements EntityDao<Consumer> {
             ResultSet rs = preparedStatement.executeQuery();
             List<Consumer> consumers = new ArrayList<>(customFilter.limit());
             while (rs.next()) {
-                Consumer consumer = addConsumer(rs);
+                Consumer consumer = new Consumer(rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("email"),
+                        rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
+                        CompanyEntityDaoImpl.getInstance().findById(
+                                rs.getLong("company_id"), connection),
+                        AddressConsumerHomeEntityDaoImpl.getInstance()
+                                .findById(rs.getLong("address_id"), connection));
                 consumers.add(consumer);
             }
             return consumers;
         }
     }
 
+    @Override
+    public boolean deleteById(Long id, Connection connection) throws SQLException {
+        try (connection;
+             PreparedStatement statement = connection.prepareStatement(DELETE)) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
+            return statement.executeUpdate() > 0;   //executeUpdate() вернет инт, мы переводим этот инт в тру фолс
+        }
+    }
 }

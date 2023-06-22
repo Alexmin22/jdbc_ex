@@ -1,24 +1,21 @@
 package org.example.dao;
 
-import org.example.entity.Company;
 import org.example.entity.Subscribe;
-import org.example.utils.ConnectionManager;
 import org.example.utils.CustomException;
-import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Repository
-public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
+public class SubscribeEntityDaoImpl implements EntityDao<Long, Subscribe> {
     private static final SubscribeEntityDaoImpl INSTANCE = new SubscribeEntityDaoImpl();
     public static SubscribeEntityDaoImpl getInstance() {
         return INSTANCE;
     }
-    private static final  String SAVE = "INSERT INTO Subscribe (name) VALUES (?)";
-    private static final  String UPDATE = "UPDATE Subscribe SET name = ? WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, name FROM Subscribe";
+    private static final  String SAVE = "INSERT INTO subscribe (name) VALUES (?)";
+    private static final  String UPDATE = "UPDATE subscribe SET name = ? WHERE id =?";
+    private static final String DELETE = "DELETE FROM subscribe WHERE id =?";
+    private static final  String FIND_ALL = "SELECT id, name FROM subscribe";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
@@ -51,20 +48,16 @@ public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
         }
     }
 
-    private Subscribe addSubscribe(ResultSet rs) throws SQLException {
-        return new Subscribe(rs.getLong("id"),
-                rs.getString("name"));
-    }
-
     @Override
-    public Subscribe findById(long id, Connection connection) throws SQLException {
+    public Subscribe findById(Long id, Connection connection) throws SQLException {
         Subscribe subscribe = null;
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
-                    subscribe = addSubscribe(rs);
+                    subscribe = new Subscribe(rs.getLong("id"),
+                            rs.getString("name"));
                 } else {
                     throw new CustomException("Company with id=" + id + " not found");
                 }
@@ -83,10 +76,21 @@ public class SubscribeEntityDaoImpl implements EntityDao<Subscribe> {
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
-                Subscribe subscribe = addSubscribe(rs);
+                Subscribe subscribe = new Subscribe(rs.getLong("id"),
+                        rs.getString("name"));
                 sub.add(subscribe);
             }
         }
         return sub;
+    }
+
+    @Override
+    public boolean deleteById(Long id, Connection connection) throws SQLException {
+        try (connection;
+             PreparedStatement statement = connection.prepareStatement(DELETE)) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
+            return statement.executeUpdate() > 0;   //executeUpdate() вернет инт, мы переводим этот инт в тру фолс
+        }
     }
 }

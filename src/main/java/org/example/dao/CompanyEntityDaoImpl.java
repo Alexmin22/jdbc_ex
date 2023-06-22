@@ -1,25 +1,22 @@
 package org.example.dao;
 
 import org.example.entity.Company;
-import org.example.entity.Consumer;
-import org.example.utils.ConnectionManager;
 import org.example.utils.CustomException;
-import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Repository
-public class CompanyEntityDaoImpl implements EntityDao<Company> {
+public class CompanyEntityDaoImpl implements EntityDao<Long, Company> {
 
     private static final CompanyEntityDaoImpl INSTANCE = new CompanyEntityDaoImpl();
     public static CompanyEntityDaoImpl getInstance() {
         return INSTANCE;
     }
-    private static final  String SAVE = "INSERT INTO Company (name) VALUES (?)";
-    private static final  String UPDATE = "UPDATE Company SET name = ? WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, name FROM Company";
+    private static final  String SAVE = "INSERT INTO company (name) VALUES (?)";
+    private static final  String UPDATE = "UPDATE company SET name = ? WHERE id =?";
+    private static final String DELETE = "DELETE FROM company WHERE id =?";
+    private static final  String FIND_ALL = "SELECT id, name FROM company";
     private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
@@ -52,20 +49,16 @@ public class CompanyEntityDaoImpl implements EntityDao<Company> {
         }
     }
 
-    private Company addCompany(ResultSet rs) throws SQLException {
-        return new Company(rs.getInt("id"),
-                rs.getString("name"));
-    }
-
     @Override
-    public Company findById(long id, Connection connection) throws SQLException {
+    public Company findById(Long id, Connection connection) throws SQLException {
         Company company = null;
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 if (rs.next()) {
-                    company = addCompany(rs);
+                    company = new Company(rs.getInt("id"),
+                            rs.getString("name"));
                 } else {
                     throw new CustomException("Company with id=" + id + " not found");
                 }
@@ -84,11 +77,21 @@ public class CompanyEntityDaoImpl implements EntityDao<Company> {
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
             while (rs.next()) {
-                Company company = addCompany(rs);
+                Company company = new Company(rs.getInt("id"),
+                        rs.getString("name"));
                 companies.add(company);
             }
         }
         return companies;
     }
 
+    @Override
+    public boolean deleteById(Long id, Connection connection) throws SQLException {
+        try (connection;
+             PreparedStatement statement = connection.prepareStatement(DELETE)) {
+            statement.setLong(1, id);
+            statement.executeUpdate();
+            return statement.executeUpdate() > 0;   //executeUpdate() вернет инт, мы переводим этот инт в тру фолс
+        }
+    }
 }
