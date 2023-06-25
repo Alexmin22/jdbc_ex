@@ -1,8 +1,9 @@
-package org.example.dao;
+package org.example.dao.jdbc;
 
+import org.example.entity.AddressConsumerHome;
 import org.example.entity.Consumer;
 import org.example.entity.Role;
-import org.example.utils.CustomException;
+import org.example.utils.jdbc.CustomException;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -11,21 +12,15 @@ import java.util.stream.Collectors;
 
 public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
 
-    private static final ConsumerEntityDaoImpl INSTANCE = new ConsumerEntityDaoImpl();
-
-    public ConsumerEntityDaoImpl() {}
-
-    public static ConsumerEntityDaoImpl getInstance() {
-        return INSTANCE;
-    }
-
-    private static final  String SAVE = "INSERT INTO consumer (email, name, roles_id, address_id, company_id)" +
+    private static final CompanyEntityDaoImpl INSTANCE = new CompanyEntityDaoImpl();
+    private static final AddressConsumerHomeEntityDaoImpl INSTANCE2 = new AddressConsumerHomeEntityDaoImpl();
+    private static final String SAVE = "INSERT INTO consumer (email, name, roles_id, address_id, company_id)" +
             " VALUES (?, ?, ?, ?, ?)";
-    private static final  String UPDATE = "UPDATE consumer SET email = ?, name = ?, roles_id = ?," +
+    private static final String UPDATE = "UPDATE consumer SET email = ?, name = ?, roles_id = ?," +
             " address_id = ?, company_id = ? WHERE id =?";
     private static final String DELETE = "DELETE FROM consumer WHERE id =?";
-    private static final  String FIND_ALL = "SELECT id, email, name, roles_id, address_id, company_id FROM consumer";
-    private static final  String FIND_BY_ID = FIND_ALL + " WHERE id =?";
+    private static final String FIND_ALL = "SELECT id, email, name, roles_id, address_id, company_id FROM consumer";
+    private static final String FIND_BY_ID = FIND_ALL + " WHERE id =?";
 
     @Override
     public Consumer save(Consumer consumer, Connection connection) {
@@ -33,7 +28,7 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
              PreparedStatement statement = connection.prepareStatement(SAVE, Statement.RETURN_GENERATED_KEYS)) {    //ключи возвращают все поля объекта
             statement.setString(1, consumer.getEmail());
             statement.setString(2, consumer.getName());
-            statement.setInt(3, consumer.getRole().ordinal()+1);
+            statement.setInt(3, consumer.getRole().ordinal() + 1);
             statement.setLong(4, consumer.getAddress().getId());
             statement.setLong(5, consumer.getCompany().getId());
             statement.executeUpdate();
@@ -54,7 +49,7 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
              PreparedStatement statement = connection.prepareStatement(UPDATE)) {
             statement.setString(1, consumer.getEmail());
             statement.setString(2, consumer.getName());
-            statement.setInt(3, consumer.getRole().ordinal()+1);
+            statement.setInt(3, consumer.getRole().ordinal() + 1);
             statement.setLong(4, consumer.getAddress().getId());
             statement.setLong(5, consumer.getCompany().getId());
             statement.setLong(6, consumer.getId());
@@ -67,22 +62,31 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
     @Override
     public Consumer findById(Long id, Connection connection) {
         Consumer consumer = null;
+
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID)) {
             preparedStatement.setLong(1, id);
             try (ResultSet rs = preparedStatement.executeQuery()) {
+                long com_id;
+                long adr_id;
                 if (rs.next()) {
                     consumer = new Consumer(rs.getLong("id"),
                             rs.getString("name"),
                             rs.getString("email"),
                             rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
-                            CompanyEntityDaoImpl.getInstance().findById(
-                                    rs.getLong("company_id"), connection),
-                            AddressConsumerHomeEntityDaoImpl.getInstance()
-                                    .findById(rs.getLong("address_id"), connection));
+                            null,
+                            null);
+                    com_id = rs.getLong("company_id");
+                    adr_id = rs.getLong("address_id");
                 } else {
                     throw new CustomException("Consumer with id=" + id + " not found");
                 }
+
+                AddressConsumerHome adres = INSTANCE2.findByIdNotClosed(adr_id, connection);
+                Company byId = INSTANCE.findByIdNotClosed(com_id, connection);
+                consumer.setCompany(byId);
+                consumer.setAddress(adres);
+
             } catch (CustomException e) {
                 throw new RuntimeException(e);
             }
@@ -99,15 +103,22 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL);
              ResultSet rs = preparedStatement.executeQuery()) {
+            long com_id;
+            long adr_id;
             while (rs.next()) {
+                com_id = rs.getLong("company_id");
+                adr_id = rs.getLong("address_id");
+
+                AddressConsumerHome adres = INSTANCE2.findByIdNotClosed(adr_id, connection);
+                Company byId = INSTANCE.findByIdNotClosed(com_id, connection);
+
                 Consumer consumer = new Consumer(rs.getLong("id"),
                         rs.getString("name"),
                         rs.getString("email"),
                         rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
-                        CompanyEntityDaoImpl.getInstance().findById(
-                                rs.getLong("company_id"), connection),
-                        AddressConsumerHomeEntityDaoImpl.getInstance()
-                                .findById(rs.getLong("address_id"), connection));
+                        byId,
+                        adres);
+
                 consumers.add(consumer);
             }
         }
@@ -118,16 +129,16 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
         List<Object> parameters = new ArrayList<>();
         List<String> filterWhere = new ArrayList<>();
 
-        if (customFilter.name()!= null) {
+        if (customFilter.name() != null) {
             parameters.add("%" + customFilter.name() + "%");
             filterWhere.add("name LIKE ?");
         }
-        if (customFilter.email()!= null) {
+        if (customFilter.email() != null) {
             parameters.add("%" + customFilter.email() + "%");
             filterWhere.add("email LIKE ?");
         }
-        if (customFilter.role()!= null) {
-            parameters.add(customFilter.role().ordinal()+1);
+        if (customFilter.role() != null) {
+            parameters.add(customFilter.role().ordinal() + 1);
             filterWhere.add("roles_id = ?");
         }
 
@@ -140,10 +151,12 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
                     .collect(Collectors.joining(" AND ", " WHERE ", " LIMIT ? OFFSET ? "));
         } else {
             where = filterWhere.stream()
-                  .collect(Collectors.joining(" AND ", "", "LIMIT ? OFFSET ? "));
+                    .collect(Collectors.joining(" AND ", "", "LIMIT ? OFFSET ? "));
         }
 
         String sql = FIND_ALL + where;
+        List<Consumer> consumers = new ArrayList<>(customFilter.limit());
+
         try (connection;
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             for (int i = 0; i < parameters.size(); i++) {
@@ -151,20 +164,27 @@ public class ConsumerEntityDaoImpl implements EntityDao<Long, Consumer> {
             }
 
             ResultSet rs = preparedStatement.executeQuery();
-            List<Consumer> consumers = new ArrayList<>(customFilter.limit());
+            long com_id;
+            long adr_id;
+
             while (rs.next()) {
-                Consumer consumer = new Consumer(rs.getInt("id"),
+                com_id = rs.getLong("company_id");
+                adr_id = rs.getLong("address_id");
+
+                AddressConsumerHome adres = INSTANCE2.findByIdNotClosed(adr_id, connection);
+                Company byId = INSTANCE.findByIdNotClosed(com_id, connection);
+
+                Consumer consumer = new Consumer(rs.getLong("id"),
                         rs.getString("name"),
                         rs.getString("email"),
                         rs.getInt("roles_id") == 1 ? Role.ADMIN : Role.USER,
-                        CompanyEntityDaoImpl.getInstance().findById(
-                                rs.getLong("company_id"), connection),
-                        AddressConsumerHomeEntityDaoImpl.getInstance()
-                                .findById(rs.getLong("address_id"), connection));
+                        byId,
+                        adres);
+
                 consumers.add(consumer);
             }
-            return consumers;
         }
+        return consumers;
     }
 
     @Override

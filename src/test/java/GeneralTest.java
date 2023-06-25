@@ -1,7 +1,7 @@
 //import org.example.dao.*;
 //import org.example.entity.*;
 //import org.example.util.ConnectionManagerTest;
-//import org.example.utils.ConnectionManager;
+//import org.example.utils.jdbc.ConnectionManager;
 //import org.junit.jupiter.api.Assertions;
 //import org.junit.jupiter.api.Test;
 //

@@ -1,17 +1,14 @@
-package org.example.dao;
+package org.example.dao.jdbc;
 
 import org.example.entity.AddressConsumerHome;
 import org.example.util.ConnectionManagerTest;
 import org.example.util.TestDataImporter;
-import org.junit.Before;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AddressConsumerHomeEntityDaoImplTest {
@@ -93,8 +90,7 @@ public class AddressConsumerHomeEntityDaoImplTest {
 
             address.deleteById(1L, ConnectionManagerTest.buildConnection());
 
-            AddressConsumerHome addressConsumerHome2 = address.findById(1L, ConnectionManagerTest.buildConnection());
-            assertThrows(address.findById(1L, ConnectionManagerTest.buildConnection()), new RuntimeException());
+            assertThrows(RuntimeException.class, () -> address.findById(1L, ConnectionManagerTest.buildConnection()));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

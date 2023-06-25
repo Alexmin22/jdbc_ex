@@ -1,6 +1,4 @@
 package org.example.util;
-
-import com.mysql.cj.Session;
 import org.testcontainers.containers.MySQLContainer;
 
 import java.sql.Connection;

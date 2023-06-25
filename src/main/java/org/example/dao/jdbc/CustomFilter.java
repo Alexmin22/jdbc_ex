@@ -1,4 +1,4 @@
-package org.example.dao;
+package org.example.dao.jdbc;
 
 import org.example.entity.Role;
 

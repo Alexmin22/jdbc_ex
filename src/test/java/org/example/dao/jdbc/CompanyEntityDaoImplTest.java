@@ -1,9 +1,11 @@
-package org.example.dao;
+package org.example.dao.jdbc;
 
+import org.example.dao.jdbc.CompanyEntityDaoImpl;
 import org.example.entity.Company;
 import org.example.util.ConnectionManagerTest;
 import org.example.util.TestDataImporter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
@@ -16,10 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CompanyEntityDaoImplTest {
 
     private static final CompanyEntityDaoImpl companyEntityDao = new CompanyEntityDaoImpl();
+
     @BeforeEach
     public void dataLoader() {
         TestDataImporter.importData();
     }
+
+    @Tag("login")
     @Test
     void findAllTest() {
         try {
@@ -35,6 +40,7 @@ public class CompanyEntityDaoImplTest {
         }
     }
 
+    @Tag("login")
     @Test
     void findByIDTest() {
         try {
@@ -47,6 +53,7 @@ public class CompanyEntityDaoImplTest {
         }
     }
 
+    @Tag("login")
     @Test
     void saveTest() {
         Company company = new Company(3L, "Romashka");
@@ -56,6 +63,7 @@ public class CompanyEntityDaoImplTest {
         assertThat(com2).isEqualTo(company);
     }
 
+    @Tag("login")
     @Test
     void updateTest() {
         try {

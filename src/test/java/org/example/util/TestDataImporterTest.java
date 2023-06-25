@@ -1,6 +1,6 @@
 package org.example.util;
 
-import org.example.dao.ConsumerEntityDaoImpl;
+import org.example.dao.jdbc.ConsumerEntityDaoImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

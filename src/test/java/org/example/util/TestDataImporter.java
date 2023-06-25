@@ -1,10 +1,9 @@
 package org.example.util;
 
-import org.example.dao.*;
+import org.example.dao.jdbc.*;
 import org.example.entity.*;
 
 import java.sql.SQLException;
-import java.util.Set;
 
 public class TestDataImporter {
 
@@ -27,14 +26,6 @@ public class TestDataImporter {
 
     private static final String DROP_TABLE_ROLES_SQL = """
             DROP TABLE IF EXISTS roles""";
-    private static final String DROP_TABLE_SUBSCRIBE_SQL = """
-            DROP TABLE IF EXISTS subscribe""";
-    private static final String CREATE_TABLE_SUBSCRIBE_SQL = """
-            create table IF NOT EXISTS subscribe (
-                                                     id bigint primary key auto_increment,
-                                                     name varchar(50) not null unique
-            );
-            """;
 
     private static final String CREATE_TABLE_CONSUMER_SQL = """
                         create table if not exists consumer (
@@ -65,7 +56,6 @@ public class TestDataImporter {
     private final static EntityDao ADDRESS_DAO = new AddressConsumerHomeEntityDaoImpl();
     private final static EntityDao COMPANY_DAO = new CompanyEntityDaoImpl();
     private final static EntityDao CONSUMER_DAO = new ConsumerEntityDaoImpl();
-    private final static EntityDao SUBSCRIBE_DAO = new SubscribeEntityDaoImpl();
 
     public static void importData() {
         dropTable();
@@ -97,14 +87,6 @@ public class TestDataImporter {
 
         try (var connection = ConnectionManagerTest.buildConnection();
              var statement = connection.createStatement()) {
-            statement.execute(CREATE_TABLE_SUBSCRIBE_SQL);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-
-        try (var connection = ConnectionManagerTest.buildConnection();
-             var statement = connection.createStatement()) {
             statement.execute(CREATE_TABLE_COMPANY_SQL);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -125,19 +107,12 @@ public class TestDataImporter {
         Company magnit = new Company(1L, "Magnit");
         Company rostselMash = new Company(2L, "RostselMash");
 
-        Subscribe ok = new Subscribe(1L, "Ok.ru");
-        Subscribe jetBrains = new Subscribe(2L, "jet brains");
-        Subscribe vk = new Subscribe(3L, "vk");
-        Subscribe yandex = new Subscribe(4L, "yandex");
-        Subscribe tricolor = new Subscribe(5L, "tricolor");
-
         Consumer victor = new Consumer();
         victor.setName("Viktor");
         victor.setEmail("vitya@ya.ru");
         victor.setRole(Role.ADMIN);
         victor.setAddress(address);
         victor.setCompany(magnit);
-        victor.setSubscriberConsSet(Set.of(yandex, tricolor));
 
         Consumer ivan = new Consumer(2L, "Ivan", "vanya@vk.com", Role.USER, rostselMash, address2);
 
@@ -147,12 +122,6 @@ public class TestDataImporter {
 
             COMPANY_DAO.save(magnit, ConnectionManagerTest.buildConnection());
             COMPANY_DAO.save(rostselMash, ConnectionManagerTest.buildConnection());
-
-            SUBSCRIBE_DAO.save(ok, ConnectionManagerTest.buildConnection());
-            SUBSCRIBE_DAO.save(jetBrains, ConnectionManagerTest.buildConnection());
-            SUBSCRIBE_DAO.save(vk, ConnectionManagerTest.buildConnection());
-            SUBSCRIBE_DAO.save(yandex, ConnectionManagerTest.buildConnection());
-            SUBSCRIBE_DAO.save(tricolor, ConnectionManagerTest.buildConnection());
 
             CONSUMER_DAO.save(victor, ConnectionManagerTest.buildConnection());
             CONSUMER_DAO.save(ivan, ConnectionManagerTest.buildConnection());
@@ -184,12 +153,6 @@ public class TestDataImporter {
         try (var connection = ConnectionManagerTest.buildConnection();
              var statement = connection.createStatement()) {
             statement.execute(DROP_TABLE_COMPANY_SQL);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try (var connection = ConnectionManagerTest.buildConnection();
-             var statement = connection.createStatement()) {
-            statement.execute(DROP_TABLE_SUBSCRIBE_SQL);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
