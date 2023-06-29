@@ -1,6 +1,7 @@
 package org.example.dao.jdbc;
 
 import org.example.entity.AddressConsumerHome;
+import org.example.entity.Company;
 import org.example.entity.Consumer;
 import org.example.entity.Role;
 import org.example.utils.jdbc.CustomException;

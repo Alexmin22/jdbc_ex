@@ -1,40 +1,61 @@
 package org.example.service.hibernate;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.PersistenceUnit;
-import org.example.dao.hibernateRepository.AdressRepository;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import org.example.dao.hibernateRepository.Repository;
+import org.example.dto.hibernate.AddressCreateDto;
+import org.example.dto.hibernate.AddressReadDto;
 import org.example.entity.AddressConsumerHome;
+import org.example.mapper.AddressCreateEditMapper;
+import org.example.mapper.AddressReadMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-public class AddressService {
+@AllArgsConstructor
+public class AddressService implements Service<Long, AddressReadDto, AddressCreateDto> {
 
-    @PersistenceUnit
-    private EntityManagerFactory emf;
 
-    private EntityManager em = emf.createEntityManager();
-
-    private final AdressRepository adressRepository = new AdressRepository(em);
-
-    public AddressConsumerHome add(AddressConsumerHome address) {
-        return adressRepository.save(address);
+    private final AddressReadMapper readMapper;
+    private final AddressCreateEditMapper createEditMapper;
+    private final Repository<Long, AddressConsumerHome> repository;
+    @Override
+    @Transactional
+    public AddressReadDto save(AddressCreateDto dto) {
+        return Optional.of(dto)
+                .map(createEditMapper::map)
+                .map(repository::save)
+                .map(readMapper::map)
+                .orElseThrow();
     }
 
-    public void deleteByID(Long id) {
-        adressRepository.delete(id);
+    @Override
+    public boolean delete(Long id) {
+        return repository.findById(id)
+                .map(address -> {
+                    repository.delete(address.getId());
+                    return true;
+                })
+                .orElse(false);
     }
 
-    public void update(AddressConsumerHome address) {
-        adressRepository.update(address);
+    @Override
+    public Optional<AddressReadDto> update(Long id, AddressReadDto dto) {
+        return repository.findById(id)
+                .map(address -> readMapper.map(dto, address))
+                .map(repository::save)
+                .map(readMapper::map);
     }
 
-    public Optional<AddressConsumerHome> getByID(Long id) {
-        return adressRepository.findById(id);
+    @Override
+    public Optional<AddressReadDto> findById(Long id, Map<String, Object> properties) {
+        return repository.findById(id)
+                .map(readMapper::map);
     }
 
-    public List<AddressConsumerHome> getAll() {
-        return adressRepository.findAll();
+    @Override
+    public List<AddressReadDto> findAll() {
+        return repository.findAll().stream().map(readMapper::map).toList();
     }
 }

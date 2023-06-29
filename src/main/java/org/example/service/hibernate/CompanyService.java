@@ -1,40 +1,66 @@
 package org.example.service.hibernate;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.PersistenceUnit;
-import org.example.dao.hibernateRepository.CompanyRepository;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import org.example.dao.hibernateRepository.Repository;
+import org.example.dto.hibernate.CompanyCreateEditDto;
+import org.example.dto.hibernate.CompanyReadDto;
 import org.example.entity.Company;
+import org.example.mapper.CompanyCreateEditMapper;
+import org.example.mapper.CompanyReadMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-public class CompanyService {
+@AllArgsConstructor
+public class CompanyService implements Service<Long, CompanyReadDto, CompanyCreateEditDto> {
 
-    @PersistenceUnit
-    private EntityManagerFactory emf;
+    private final CompanyReadMapper companyReadMapper;
 
-    private EntityManager em = emf.createEntityManager();
+    private final CompanyCreateEditMapper companyCreateEditMapper;
 
-    private final CompanyRepository companyRepository = new CompanyRepository(em);
+    private final Repository<Long, Company> repository;
 
-    public Company add(Company company) {
-        return companyRepository.save(company);
+    @Override
+    @Transactional
+    public CompanyReadDto save(CompanyCreateEditDto dto) {
+        return Optional.of(dto)
+                .map(companyCreateEditMapper::map)
+                .map(repository::save)
+                .map(companyReadMapper::map)
+                .orElseThrow();
     }
 
-    public void deleteByID(Long id) {
-        companyRepository.delete(id);
+    @Transactional
+    @Override
+    public boolean delete(Long id) {
+        return repository.findById(id)
+                .map(entity -> {
+                    repository.delete(entity.getId());
+                    return true;
+                })
+                .orElse(false);
     }
 
-    public void update(Company company) {
-        companyRepository.update(company);
+    @Transactional
+    @Override
+    public Optional<CompanyReadDto> update(Long id, CompanyReadDto dto) {
+        return repository.findById(id)
+                .map(entity -> companyReadMapper.map(dto, entity))
+                .map(repository::save)
+                .map(companyReadMapper::map);
     }
 
-    public Optional<Company> getByID(Long id) {
-        return companyRepository.findById(id);
+    @Transactional
+    @Override
+    public Optional<CompanyReadDto> findById(Long id, Map<String, Object> properties) {
+        return repository.findById(id).map(companyReadMapper::map);
     }
 
-    public List<Company> getAll() {
-        return companyRepository.findAll();
+    @Transactional
+    @Override
+    public List<CompanyReadDto> findAll() {
+        return repository.findAll().stream().map(companyReadMapper::map).toList();
     }
 }

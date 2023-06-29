@@ -10,7 +10,7 @@ import lombok.*;
 @Entity
 @Table(name = "address_consumer_home")
 @Builder
-public class Company implements BaseEntity<Long> {
+public class AddressConsumerHome implements BaseEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

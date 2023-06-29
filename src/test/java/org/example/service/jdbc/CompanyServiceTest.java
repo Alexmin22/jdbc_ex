@@ -1,8 +1,8 @@
 package org.example.service.jdbc;
 
 import org.example.entity.Company;
-import org.example.util.ConnectionManagerTest;
-import org.example.util.TestDataImporter;
+import org.example.util.jdbc.ConnectionManagerTest;
+import org.example.util.jdbc.TestDataImporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

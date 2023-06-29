@@ -1,4 +1,4 @@
-package org.example;
+package org.example.util.jdbc;
 
 import org.example.dao.jdbc.CompanyEntityDaoImplTest;
 import org.junit.platform.engine.discovery.DiscoverySelectors;

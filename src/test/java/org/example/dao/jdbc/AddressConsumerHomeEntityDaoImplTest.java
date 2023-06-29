@@ -1,14 +1,13 @@
 package org.example.dao.jdbc;
 
 import org.example.entity.AddressConsumerHome;
-import org.example.util.ConnectionManagerTest;
-import org.example.util.TestDataImporter;
+import org.example.util.jdbc.ConnectionManagerTest;
+import org.example.util.jdbc.TestDataImporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.sql.SQLException;
 import java.util.List;
-
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AddressConsumerHomeEntityDaoImplTest {

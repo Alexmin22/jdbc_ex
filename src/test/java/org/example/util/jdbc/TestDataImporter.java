@@ -1,4 +1,4 @@
-package org.example.util;
+package org.example.util.jdbc;
 
 import org.example.dao.jdbc.*;
 import org.example.entity.*;

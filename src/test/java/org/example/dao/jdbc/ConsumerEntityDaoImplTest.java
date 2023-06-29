@@ -1,10 +1,11 @@
 package org.example.dao.jdbc;
 
 import org.example.entity.AddressConsumerHome;
+import org.example.entity.Company;
 import org.example.entity.Consumer;
 import org.example.entity.Role;
-import org.example.util.ConnectionManagerTest;
-import org.example.util.TestDataImporter;
+import org.example.util.jdbc.ConnectionManagerTest;
+import org.example.util.jdbc.TestDataImporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

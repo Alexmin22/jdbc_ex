@@ -1,4 +1,4 @@
-package org.example.util;
+package org.example.util.jdbc;
 import org.testcontainers.containers.MySQLContainer;
 
 import java.sql.Connection;
